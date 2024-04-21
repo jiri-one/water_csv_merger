@@ -35,10 +35,11 @@ class Doctor:
 
     def __post_init__(self):
         # remove "MUDr." from surname
-        self.surname.strip("MUDr.")
+        self.surname = self.surname.removeprefix("MUDr.")
+        self.name = self.name.removeprefix("MUDr.")
         # remove whitespaces from both sides of name and surname
-        self.surname.strip()
-        self.name.strip()
+        self.surname = self.surname.strip()
+        self.name = self.name.strip()
         # fill all_lover attribute
         if self.name:
             self.all_lower = self.surname.lower() + " " + self.name.lower()
@@ -59,7 +60,7 @@ with open(file1) as exp_file, open(file2) as target_file:
     # create set of doctors and advisors
     for target_row in target_reader:
         doctor = Doctor(advisor = target_row["Scientific Advisor Name"],
-                        title = target_row["Titul"],
+                        title = target_row["Titul"] if target_row["Titul"] else "MUDr.",
                         name = target_row["HCP First Name"],
                         surname = target_row["HCP Last Name"],
                         last_activity = target_row["last activity"],
@@ -79,6 +80,7 @@ with open(file1) as exp_file, open(file2) as target_file:
                         visit_1 = target_row["1 návštěva"],
                         visit_5 = target_row["5 návštěva"],
                         )
+
         # check if the such a doctor exists
         for saved_doctor in doctors:
             if saved_doctor.all_lower == doctor.all_lower:
@@ -135,8 +137,27 @@ with open(file1) as exp_file, open(file2) as target_file:
                 # this doctor exists, now we need to check his address
                 if saved_doctor.address.lower() == doctor.address.lower():
                     # it is same doctor, so we will update his data
+                    doctors[index] = replace(saved_doctor, advisor = doctor.advisor,
+                         title = doctor.title if doctor.title else saved_doctor.title,
+                         surname = doctor.surname,
+                         name = doctor.name,
+                         last_activity = doctor.last_activity,
+                         address = doctor.address,
+                         psc = doctor.psc,
+                         city = doctor.city,
+                         brick = doctor.brick,
+                         originally_selected = doctor.originally_selected if doctor.originally_selected else saved_doctor.originally_selected,
+                         finally_selected = doctor.finally_selected if doctor.finally_selected else saved_doctor.finally_selected,
+                         typ = doctor.typ,
+                         lecture = doctor.lecture,
+                         has_a_counselling_room = doctor.has_a_counselling_room,
+                         has_question = doctor.has_question,
+                         visit_4 = doctor.visit_4,
+                         visit_3 = doctor.visit_3,
+                         visit_2 = doctor.visit_2,
+                         visit_1 = doctor.visit_1,
+                         visit_5 = doctor.visit_5,)
                     updated_doctors += 1
-                    replace(doctors[index], **doctor.__dict__)
                     break
                 else:
                     # doctor has another address, so it is another doctor, we will save a new one
@@ -166,15 +187,14 @@ assert count_doctors == count_unique_ids
 
 # and save it to the file at the end
 with open(file3, 'w') as csvfile:
-    fieldnames = ["Scientific Advisor Name", "Titul", "HCP Last Name","HCP First Name","last activity","Adresa","PSČ","City","Brick","Originally selected","Finally selected","Typ","Má zájem přednášet","Má poradnu","Má dotaz","4 návštěva","3 návštěva","2 návštěva","1 návštěva","5 návštěva"]
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    fieldnames = ["Scientific Advisor Name", "Titul", "HCP Name" ,"last activity","Adresa","PSČ","City","Brick","Originally selected","Finally selected","Typ","Má zájem přednášet","Má poradnu","Má dotaz","4 návštěva","3 návštěva","2 návštěva","1 návštěva","5 návštěva"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
 
     writer.writeheader()
     for doctor in doctors:
         writer.writerow({"Scientific Advisor Name": doctor.advisor,
-                         "Titul": doctor.title,
-                         "HCP Last Name": doctor.surname,
-                         "HCP First Name": doctor.name,
+                         "Titul": doctor.title if doctor.title else "MUDr.",
+                         "HCP Name": doctor.surname + " " + doctor.name if doctor.name else doctor.surname,
                          "last activity": doctor.last_activity,
                          "Adresa": doctor.address,
                          "PSČ": doctor.psc,
